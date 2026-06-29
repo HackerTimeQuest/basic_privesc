@@ -1,27 +1,30 @@
 ---
-name: hacker-time-basic-privesc
+name: Basic Linux Privilege Escalation
+slug: basic_privesc
 version: "1.0.0"
-author: HackerTime Labs
-created: 2025-06-27
-updated: 2025-06-27
+author: "HackerTime"
+created: 2026-06-27
+updated: 2026-06-27
+tags: 
+  - linux
+  - privesc
+  - beginner
+  - pentest
+difficulty: beginner
+category: pentesting
 description: >
   Four-classic Linux privilege-escalation vectors in a single isolated VM.
   Practice SUID abuse, cron exploitation, sudo misconfigurations, and
   weak file permissions with immediate feedback via flag files.
-tags: [linux, privesc, beginner, pentest]
-provisioner: vagrant        # also docker-compose (see docker-compose.yml)
-base_image: bento/ubuntu-20.04
-attacker_network: 192.168.49.0/24
-target_ip: 192.168.49.10
- ssh_port: 2222          # host-port for Docker
-difficulty: beginner
-estimated_time: 60-120
+target: 
+  ip: "192.168.49.10"
+  network: "192.168.49.0/24"
+  ports: [2222]           # host-port for Docker
 prerequisites:
   - basic linux navigation
   - ssh
   - reading permissions & ownership
-learning_outcomes:
-  - recognise and exploit SUID binaries
-  - abuse cron jobs for privesc
-  - identify and exploit sudo misconfigurations
-  - weaponise weak file permissions
+estimated_time: 90
+cost_per_minute: 0.01
+environment:
+  type: VM
