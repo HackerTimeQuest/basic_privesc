@@ -1,0 +1,52 @@
+# Objectives (flag submission & validation)
+# Each flag lives in /root/<file> and must be submitted by the learner.
+# The validate.sh script checks that the expected hashes are present (i.e.
+# the flags have NOT been read / moved).
+
+flags:
+  - id: flag1
+    name: "SUID Binary Exploitation"
+    description: >
+      Find the custom SUID binary on the system and abuse it to reach a root
+      shell.  Once you have root, cat /root/flag1.txt and submit the value.
+    file: /root/flag1.txt
+    vector: suid
+    difficulty: easy
+    tool: none                # no compilation needed on attacker side
+    writable: true
+
+  - id: flag2
+    name: "Cron Job Abuse"
+    description: >
+      Discover a root-owned cron job that runs a world-writable script.
+      Modify the script to escalate your privileges, then capture the flag.
+    file: /root/flag2.txt
+    vector: cron
+    difficulty: easy
+    tool: none
+    writable: true
+
+  - id: flag3
+    name: "Sudo Misconfiguration"
+    description: >
+      appuser has an unusual sudo rule.  Find a public exploit or bypass
+      technique to turn that rule into a full root shell.
+    file: /root/flag3.txt
+    vector: sudo
+    difficulty: moderate
+    tool: gtfobins            # provided on the box as a local HTML file
+
+  - id: flag4
+    name: "Weak File Permissions"
+    description: >
+      Something critical on this system has overly permissive file attributes.
+      Abuse those permissions to create a new user with root privileges.
+    file: /root/flag4.txt
+    vector: weak_permissions
+    difficulty: easy
+    tool: none
+    writable: true
+
+submission:
+  method: echo                # learner types the flag value directly
+  validator: scripts/validate.sh   # optional — checks flags are still in place

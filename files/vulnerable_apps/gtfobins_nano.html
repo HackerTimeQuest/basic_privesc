@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>GTFOBins — nano</title></head>
+<body>
+<h1>GTFOBins Reference — nano</h1>
+<p>This is an <b>offline copy</b> of the nano entries from <a href="https://gtfobins.github.io/gtfobins/nano" target="_blank">gtfobins.github.io</a>.</p>
+
+<h2>Privilege Escalation — Sudo</h2>
+<p>If <code>/usr/bin/nano</code> can be run via sudo on a target file, you can escape to a root shell.</p>
+<pre><code>sudo nano /etc/hosts</code></pre>
+<p>Once nano opens:</p>
+<ol>
+  <li>Press <b>Ctrl-R</b> then <b>Ctrl-X</b> (the read-file shortcut exits nano)</li>
+  <li>When prompted for a file name, type: <code>/bin/sh</code></li>
+  <li>You now have an interactive root shell.</li>
+</ol>
+
+<hr>
+<h2>Note for this lab</h2>
+<p>Your sudo rule is: <code>appuser ALL=(ALL) NOPASSWD: /usr/bin/nano /etc/hosts</code></p>
+<p>Try running it and then apply the escape above.</p>
+</body>
+</html>

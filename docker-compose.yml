@@ -1,0 +1,30 @@
+# Docker Compose — local isolated network for lab
+# Run:  docker compose up --build -d
+# Then: docker attach basic_privesc_target  to debug
+
+version: '3.8'
+
+services:
+  target:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: basic_privesc_target
+    networks:
+      lab-net:
+        ipv4_address: 172.28.1.10
+    ports:
+      - "2222:22"
+    restart: unless-stopped
+    cap_add:
+      # Required for: setuid/setgid (SUID binary), DAC override (cron)
+      - SETUID
+      - SETGID
+      - DAC_OVERRIDE
+
+networks:
+  lab-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.1.0/24

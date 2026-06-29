@@ -1,0 +1,4 @@
+This is hint #2 of 3.
+
+Check the standard cron directories:  /etc/cron.d, /etc/cron.daily, /var/spool/cron
+If you find a scheduled script that you can write to … what happens when cron runs it?

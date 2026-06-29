@@ -1,0 +1,7 @@
+This is hint #3 of 3.
+
+Run:  sudo -l
+What does the output tell you?  (There's a well-known bypass for the allowed binary.)
+
+Also try:  ls -la /etc/passwd
+Does the mode look right for a file that contains every user account on the system?
