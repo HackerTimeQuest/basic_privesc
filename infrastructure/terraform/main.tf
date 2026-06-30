@@ -28,12 +28,30 @@ variable "resource_group_name" {
 
 variable "location" {
   description = "Azure region for resources"
-  default     = "eastus"
+  default     = "northeurope"
 }
 
 variable "environment" {
   description = "Environment tag"
   default     = "hackertime"
+}
+
+variable "admin_username" {
+  description = "Admin username for the VM"
+  default     = "azureuser"
+}
+
+variable "allow_password_auth" {
+  description = "Whether to allow SSH password authentication"
+  type        = bool
+  default     = true
+}
+
+variable "admin_password" {
+  description = "Admin password for the VM"
+  type        = string
+  sensitive   = true
+  default     = "wareh0use!"
 }
 
 # Resource Group
@@ -65,6 +83,8 @@ resource "azurerm_subnet" "main" {
   resource_group_name  = azurerm_resource_group.main.name
   virtual_network_name = azurerm_virtual_network.main.name
   address_prefixes     = ["10.0.1.0/24"]
+
+  depends_on = [azurerm_virtual_network.main]
 }
 
 # Network Security Group
@@ -134,14 +154,17 @@ resource "azurerm_linux_virtual_machine" "target" {
   resource_group_name = azurerm_resource_group.main.name
   size                = "Standard_B1s"
 
-  admin_username = "azureuser"
+  admin_username = var.admin_username
 
-  # Disable password authentication, use SSH keys
-  disable_password_authentication = true
+  # Toggle password authentication (lab requires password auth)
+  disable_password_authentication = !var.allow_password_auth
 
   network_interface_ids = [
     azurerm_network_interface.main.id,
   ]
+
+  # If password auth is allowed, supply the admin password (from Key Vault or variable)
+  admin_password = var.admin_password
 
   os_disk {
     caching              = "ReadWrite"

@@ -14,7 +14,6 @@ Get an initial foothold as `appuser` and exploit four different misconfiguration
 
 ## Prerequisites
 
-- Docker Desktop or VirtualBox + Vagrant
 - Basic Linux navigation and reading
 - Familiarity with SSH
 
@@ -42,4 +41,8 @@ Read `lab.md` for the full story and rules before connecting.
 
 ## Contributing
 
-All contributions welcome. Follow the folder structure at root of this repo.
+We welcome contributions but don't guarantee inclusion in the HackerTime Labs content. Please follow the folder structure at root of this repo.
+
+We currently can't pay you for any contributions. But please feel free to include instructions on how you would like to be recognied within the lab environment.
+
+We hope to implement a 'credit for content' scheme in the future.

@@ -10,6 +10,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LAB_DIR="$(dirname "$SCRIPT_DIR")"
 PROVIDER="${1:-terraform}"
+DEFAULT_LOCATIONS=(northeurope westeurope eastus centralus eastus2)
+VM_SIZE="Standard_B1s"
 
 YELLOW='\033[1;33m'
 GREEN='\033[0;32m'
@@ -25,6 +27,13 @@ banner() {
   echo -e "${RESET}"
 }
 
+sku_available() {
+  local location="$1"
+
+  az vm list-skus --location "$location" --size "$VM_SIZE" \
+    --query "[?length(restrictions)==\`0\`].name" -o tsv | grep -qx "$VM_SIZE"
+}
+
 setup_terraform() {
   echo -e "${YELLOW}[•] Checking for Terraform${RESET}"
   if ! command -v terraform &>/dev/null; then
@@ -38,10 +47,27 @@ setup_terraform() {
     exit 1
   fi
 
-  echo -e "${YELLOW}[•] Initializing and applying Terraform …${RESET}"
+  echo -e "${YELLOW}[•] Determining an available Azure region for ${VM_SIZE}…${RESET}"
+  SELECTED_LOCATION=""
+  for loc in "${DEFAULT_LOCATIONS[@]}"; do
+    echo -e "${CYAN}[•] Checking ${loc}...${RESET}"
+    if sku_available "$loc"; then
+      SELECTED_LOCATION="$loc"
+      echo -e "${GREEN}[✓] ${VM_SIZE} is available in ${loc}${RESET}"
+      break
+    fi
+    echo -e "${YELLOW}[!] ${VM_SIZE} unavailable in ${loc}, trying next.${RESET}"
+  done
+
+  if [ -z "$SELECTED_LOCATION" ]; then
+    echo "ERROR: No Azure region found with ${VM_SIZE} available." >&2
+    exit 1
+  fi
+
+  echo -e "${YELLOW}[•] Initializing and applying Terraform in ${SELECTED_LOCATION}…${RESET}"
   cd "$LAB_DIR/infrastructure/terraform"
   terraform init
-  terraform apply -auto-approve
+  terraform apply -auto-approve -var="location=${SELECTED_LOCATION}"
 
   PUBLIC_IP=$(terraform output -raw public_ip_address)
   echo -e "${GREEN}[✓] VM is running on Azure.${RESET}"
