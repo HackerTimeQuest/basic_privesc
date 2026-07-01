@@ -31,6 +31,11 @@ variable "location" {
   default     = "northeurope"
 }
 
+variable "vm_size" {
+  description = "VM size for the Azure VM"
+  default     = "Standard_B1s"
+}
+
 variable "environment" {
   description = "Environment tag"
   default     = "hackertime"
@@ -152,7 +157,7 @@ resource "azurerm_linux_virtual_machine" "target" {
   name                = var.vm_name
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
-  size                = "Standard_B1s"
+  size                = var.vm_size
 
   admin_username = var.admin_username
 
