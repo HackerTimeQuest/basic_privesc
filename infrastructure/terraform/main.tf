@@ -59,6 +59,11 @@ variable "admin_password" {
   default     = "wareh0use!"
 }
 
+variable "allowed_ssh_cidr" {
+  description = "CIDR block allowed for SSH access (e.g., 203.0.113.0/32 for single IP)"
+  default     = "0.0.0.0/0"
+}
+
 # Resource Group
 resource "azurerm_resource_group" "main" {
   name     = var.resource_group_name
@@ -106,7 +111,7 @@ resource "azurerm_network_security_group" "main" {
     protocol                   = "Tcp"
     source_port_range          = "*"
     destination_port_range     = "22"
-    source_address_prefix      = "*"
+    source_address_prefix      = var.allowed_ssh_cidr
     destination_address_prefix = "*"
   }
 

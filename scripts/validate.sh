@@ -5,7 +5,6 @@
 #   ./scripts/validate.sh                  # auto-detect provider
 #   ./scripts/validate.sh terraform        # use Terraform output IP
 #   ./scripts/validate.sh vagrant          # use Vagrant host-only IP
-#   ./scripts/validate.sh docker           # use localhost:2222
 #   ./scripts/validate.sh custom user@host # use custom SSH target
 
 set -euo pipefail
@@ -39,10 +38,6 @@ else
     vagrant)
       TARGET="appuser@192.168.49.10"
       ;;
-    docker)
-      TARGET="appuser@localhost"
-      SSHOPT="-p 2222 ${SSHOPT}"
-      ;;
     auto)
       # Try to auto-detect which provider is running
       if cd "$LAB_DIR/infrastructure/terraform" 2>/dev/null && terraform output public_ip_address &>/dev/null 2>&1; then
@@ -52,11 +47,8 @@ else
         fi
       elif vagrant global-status 2>/dev/null | grep -q "running" && vagrant global-status 2>/dev/null | grep -q "hacker-time-privesc"; then
         TARGET="appuser@192.168.49.10"
-      elif docker compose ps -q target &>/dev/null 2>&1; then
-        TARGET="appuser@localhost"
-        SSHOPT="-p 2222 ${SSHOPT}"
       else
-        echo "ERROR: Could not auto-detect running provider. Specify one: terraform|vagrant|docker" >&2
+        echo "ERROR: Could not auto-detect running provider. Specify one: terraform|vagrant" >&2
         exit 1
       fi
       ;;
@@ -106,7 +98,7 @@ check "Flag 3 — sudo nano rule exists" "1" "$OUT"
 # --- Flag 4: /etc/passwd permissions ---
 OUT=$(sshpass -p 'wareh0use!' ssh $SSHOPT "$TARGET" \
   'stat -c "%a" /etc/passwd 2>/dev/null || echo "MISSING"' 2>/dev/null || echo "MISSING")
-check "Flag 4 — /etc/passwd mode is 777" "1777" "$OUT"
+check "Flag 4 — /etc/passwd mode is 777" "777" "$OUT"
 
 # --- Flag content integrity (flags must still be present) ---
 for i in 1 2 3 4; do

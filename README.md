@@ -35,7 +35,7 @@ Read `lab.md` for the full story and rules before connecting.
 
 ## Safety
 
-- All traffic is contained to a host-only or Docker network — nothing reaches the internet
+- All traffic is contained to a host-only network or Azure access controls — nothing reaches the internet
 - Run `./scripts/reset.sh` to revert the VM to its initial state at any time
 - Run `./scripts/validate.sh` to confirm all flags are in their correct starting positions (asserts pass when flags are NOT placed)
 

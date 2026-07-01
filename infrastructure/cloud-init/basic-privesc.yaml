@@ -24,6 +24,7 @@ packages:
   - lsof
   - net-tools
   - procps
+  - ufw
 
 write_files:
   # ---- Flag files ----
@@ -139,6 +140,11 @@ runcmd:
   - sed -i 's/^#PasswordAuthentication/PasswordAuthentication/' /etc/ssh/sshd_config
   - sed -i 's/^PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config
   - service ssh restart
+  - "# Guest firewall (UFW) will be finalized by setup.sh to restrict creator's IP"
+  - ufw --force enable
+  - ufw default deny incoming
+  - ufw default allow outgoing
+  - ufw allow 22/tcp
   - rm -f /var/lib/cloud/instance/boot-finished
   - touch /opt/.lab-provisioned
 

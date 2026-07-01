@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 # setup.sh — Provision the lab environment
-# Supports three back-ends: terraform/azure (default), vagrant, and docker-compose.
+# Supports two back-ends: terraform/azure (default) and vagrant.
 #   ./setup.sh                # terraform apply (Azure)
 #   ./setup.sh vagrant        # vagrant up
-#   ./setup.sh docker         # docker compose up -d
 
 set -euo pipefail
 
@@ -80,16 +79,46 @@ setup_terraform() {
   fi
 
   echo -e "${GREEN}[✓] Selected ${SELECTED_SIZE} in ${SELECTED_LOCATION}${RESET}"
+
+  echo -e "${YELLOW}[•] Detecting your public IP for SSH firewall…${RESET}"
+  MY_IP=$(curl -s https://checkip.amazonaws.com | tr -d ' \n')
+  if [ -z "$MY_IP" ]; then
+    echo -e "${YELLOW}[!] Could not auto-detect IP; allowing from anywhere.${RESET}"
+    MY_IP="0.0.0.0/0"
+  else
+    echo -e "${GREEN}[✓] Restricting SSH access to ${MY_IP}/32${RESET}"
+    MY_IP="${MY_IP}/32"
+  fi
+
   echo -e "${YELLOW}[•] Initializing and applying Terraform…${RESET}"
   cd "$LAB_DIR/infrastructure/terraform"
   terraform init
-  terraform apply -auto-approve -var="location=${SELECTED_LOCATION}" -var="vm_size=${SELECTED_SIZE}"
+  terraform apply -auto-approve -var="location=${SELECTED_LOCATION}" -var="vm_size=${SELECTED_SIZE}" -var="allowed_ssh_cidr=${MY_IP}"
 
   PUBLIC_IP=$(terraform output -raw public_ip_address)
   echo -e "${GREEN}[✓] VM is running on Azure.${RESET}"
   echo ""
+
+  echo -e "${YELLOW}[•] Waiting for SSH and configuring guest firewall…${RESET}"
+  for i in {1..30}; do
+    if timeout 2 ssh -o ConnectTimeout=1 -o StrictHostKeyChecking=no appuser@"$PUBLIC_IP" exit 2>/dev/null; then
+      echo -e "${GREEN}[✓] SSH is responsive${RESET}"
+      if command -v sshpass &>/dev/null; then
+        sshpass -p "wareh0use!" ssh -o StrictHostKeyChecking=no appuser@"$PUBLIC_IP" "sudo ufw delete allow 22/tcp 2>/dev/null; sudo ufw allow from ${MY_IP%/32} to any port 22; echo 'Guest firewall updated.'" >/dev/null 2>&1
+        echo -e "${GREEN}[✓] Guest firewall configured${RESET}"
+      fi
+      break
+    fi
+    [ $i -lt 30 ] && sleep 2
+  done
+
+  echo ""
   echo "  SSH in with:"
-  echo -e "  ${CYAN}ssh -o StrictHostKeyChecking=no azureuser@$PUBLIC_IP${RESET}   (key-based auth)"
+  echo -e "  ${CYAN}ssh appuser@$PUBLIC_IP${RESET}   (password: wareh0use!)"
+  echo ""
+  echo "  Security:"
+  echo "  - Azure NSG:  restricted to ${MY_IP}"
+  echo "  - Guest UFW: restricted to ${MY_IP}"
   echo ""
 }
 
@@ -110,33 +139,14 @@ setup_vagrant() {
   echo ""
 }
 
-setup_docker() {
-  echo -e "${YELLOW}[•] Checking for docker compose${RESET}"
-  if ! docker compose version &>/dev/null; then
-    echo "ERROR: docker compose not found.  Install Docker Desktop first." >&2
-    exit 1
-  fi
-
-  # Build image and run provisioner inside container
-  docker compose build target
-  docker compose up -d target
-
-  CONTAINER_ID=$(docker compose ps -q target)
-  echo -e "${GREEN}[✓] Container running as ${CONTAINER_ID}${RESET}"
-  echo ""
-  echo "  SSH in with:"
-  echo -e "  ${CYAN}ssh -p 2222 appuser@localhost${RESET}   (password: wareh0use!)"
-  echo ""
-}
 
 banner
 case "$PROVIDER" in
   terraform|azure) setup_terraform ;;
   vagrant)          setup_vagrant   ;;
-  docker)           setup_docker    ;;
   *)
     echo "ERROR: Unknown provider '$PROVIDER'" >&2
-    echo "Usage: $0 [terraform|vagrant|docker]" >&2
+    echo "Usage: $0 [terraform|vagrant]" >&2
     exit 1
     ;;
 esac

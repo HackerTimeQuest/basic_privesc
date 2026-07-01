@@ -27,9 +27,9 @@ Submitting any one flag proves you've successfully escalated. Finding all four w
 
 | Protocol | Host | User | Password |
 |----------|------|------|----------|
-| SSH | `192.168.49.10` (Vagrant) or `localhost:2222` (Docker) | `appuser` | `wareh0use!` |
+| SSH | `192.168.49.10` (Vagrant) | `appuser` | `wareh0use!` |
 
-> If you're using the Vagrant provider the VM gets a host-only IP at `192.168.49.10`. Docker compose maps port `2222` on your host to the SSH server inside the container.
+> If you're using the Vagrant provider the VM gets a host-only IP at `192.168.49.10`.
 
 ## Rules
 
@@ -43,7 +43,7 @@ Submitting any one flag proves you've successfully escalated. Finding all four w
 The server is a standard Ubuntu 20.04 LTS machine — nothing exotic on the surface. Your job is the same as in the field:
 
 1. Confirm who you are and what you can do (`id`, `sudo -l`, `env`, etc.)
-2. Enumerate the system thoroughly (SUID binaries, cron, writable files, kernel version, Docker socket, …)
+2. Enumerate the system thoroughly (SUID binaries, cron, writable files, kernel version, …)
 3. Find misconfigurations and abuse them
 4. Collect the flags and consider yourself hired ☕
 

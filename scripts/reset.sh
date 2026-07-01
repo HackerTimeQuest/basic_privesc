@@ -2,7 +2,6 @@
 # reset.sh — Revert the lab to its initial clean state
 #   ./reset.sh                # terraform taint & reapply (Azure)
 #   ./reset.sh vagrant        # vagrant reload --provision
-#   ./reset.sh docker         # replays the Docker provisioning
 
 set -euo pipefail
 
@@ -31,14 +30,6 @@ case "$PROVIDER" in
     terraform apply -auto-approve
     echo -e "${GREEN}[✓] VM rebuilt on Azure.${RESET}"
     ;;
-  docker)
-    echo -e "${YELLOW}[•] Tearing down old container …${RESET}"
-    docker compose down -v 2>/dev/null || true
-    echo -e "${YELLOW}[•] Recreating container …${RESET}"
-    docker compose build --no-cache target 2>/dev/null
-    docker compose up -d target
-    echo -e "${GREEN}[✓] Clean container started.${RESET}"
-    ;;
   vagrant)
     echo -e "${YELLOW}[•] Destroying and re-provisioning VM …${RESET}"
     vagrant destroy -f
@@ -47,7 +38,7 @@ case "$PROVIDER" in
     ;;
   *)
     echo "ERROR: Unknown provider '$PROVIDER'" >&2
-    echo "Usage: $0 [terraform|vagrant|docker]" >&2
+    echo "Usage: $0 [terraform|vagrant]" >&2
     exit 1
     ;;
 esac

@@ -17,19 +17,24 @@ Vagrant.configure("2") do | config |
   # Synced folders (rsync mode for read-only repo content)
   config.vm.synced_folder ".", "/vagrant", type: "rsync"
 
-  # Provision with Ansible from the repo
-  config.vm.provision "ansible" do | playbook |
-    playbook.playbook  = "infrastructure/ansible/provision.yml"
-    playbook.limit     = "all"
-    playbook.extra_vars = {
-      vagrant_user_name: "vagrant",
-      vagrant_user_password: "acceptance",
-    }
+  # Provision with cloud-init using the repo user-data file.
+  config.vm.provision "file" do |f|
+    f.source      = "infrastructure/cloud-init/basic-privesc.yaml"
+    f.destination = "/tmp/basic-privesc.yaml"
   end
-  # cloud-init alternative (uncomment if preferred)
-  # config.vm.provision "cloud_init" do | ci |
-  #   ci.path = "infrastructure/cloud-init/basic-privesc.yaml"
-  # end
+
+  config.vm.provision "shell", privileged: true, inline: <<-SHELL
+    set -euo pipefail
+    apt-get update -y
+    apt-get install -y --no-install-recommends cloud-init
+    mkdir -p /var/lib/cloud/seed/nocloud
+    cp /tmp/basic-privesc.yaml /var/lib/cloud/seed/nocloud/user-data
+    chmod 644 /var/lib/cloud/seed/nocloud/user-data
+    cloud-init clean
+    cloud-init init
+    cloud-init modules --mode=config
+    cloud-init modules --mode=final
+  SHELL
 
   # SSH timeouts that suit a dev VM
   config.ssh.insert_key = false
