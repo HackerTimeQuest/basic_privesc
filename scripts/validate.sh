@@ -3,8 +3,7 @@
 # Exit 0 on success, non-zero on failure.
 # Usage: ./scripts/validate.sh [provider] [custom-ssh-target]
 #   ./scripts/validate.sh                  # auto-detect provider
-#   ./scripts/validate.sh terraform        # use Terraform output IP
-#   ./scripts/validate.sh vagrant          # use Vagrant host-only IP
+#   ./scripts/validate.sh opentofu        # use OpenTofu output IP
 #   ./scripts/validate.sh custom user@host # use custom SSH target
 
 set -euo pipefail
@@ -22,33 +21,39 @@ PROVIDER="${1:-auto}"
 CUSTOM_TARGET="${2:-}"
 SSHOPT="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5"
 
+if command -v otf &>/dev/null; then
+  TF_CMD=otf
+elif command -v terraform &>/dev/null; then
+  TF_CMD=terraform
+else
+  TF_CMD=""
+fi
+
 if [ -n "$CUSTOM_TARGET" ]; then
   TARGET="$CUSTOM_TARGET"
 else
   case "$PROVIDER" in
-    terraform|azure)
+    opentofu|azure)
+      if [ -z "$TF_CMD" ]; then
+        echo "ERROR: OpenTofu CLI not found. Install from https://opentofu.org/" >&2
+        exit 1
+      fi
       cd "$LAB_DIR/infrastructure/terraform"
-      PUBLIC_IP=$(terraform output -raw public_ip_address 2>/dev/null || echo "")
+      PUBLIC_IP=$($TF_CMD output -raw public_ip_address 2>/dev/null || echo "")
       if [ -z "$PUBLIC_IP" ]; then
-        echo "ERROR: Could not get Terraform output. Have you run setup.sh?" >&2
+        echo "ERROR: Could not get OpenTofu output. Have you run setup.sh?" >&2
         exit 1
       fi
       TARGET="azureuser@$PUBLIC_IP"
       ;;
-    vagrant)
-      TARGET="appuser@192.168.49.10"
-      ;;
     auto)
-      # Try to auto-detect which provider is running
-      if cd "$LAB_DIR/infrastructure/terraform" 2>/dev/null && terraform output public_ip_address &>/dev/null 2>&1; then
-        PUBLIC_IP=$(terraform output -raw public_ip_address 2>/dev/null || echo "")
+      if [ -n "$TF_CMD" ] && cd "$LAB_DIR/infrastructure/terraform" 2>/dev/null && $TF_CMD output public_ip_address &>/dev/null 2>&1; then
+        PUBLIC_IP=$($TF_CMD output -raw public_ip_address 2>/dev/null || echo "")
         if [ -n "$PUBLIC_IP" ]; then
           TARGET="azureuser@$PUBLIC_IP"
         fi
-      elif vagrant global-status 2>/dev/null | grep -q "running" && vagrant global-status 2>/dev/null | grep -q "hacker-time-privesc"; then
-        TARGET="appuser@192.168.49.10"
       else
-        echo "ERROR: Could not auto-detect running provider. Specify one: terraform|vagrant" >&2
+        echo "ERROR: Could not auto-detect running provider. Specify one: opentofu|azure" >&2
         exit 1
       fi
       ;;

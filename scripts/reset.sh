@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
 # reset.sh — Revert the lab to its initial clean state
-#   ./reset.sh                # terraform taint & reapply (Azure)
-#   ./reset.sh vagrant        # vagrant reload --provision
+#   ./reset.sh                # opentofu taint & reapply (Azure)
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LAB_DIR="$(dirname "$SCRIPT_DIR")"
-PROVIDER="${1:-terraform}"
+PROVIDER="${1:-opentofu}"
 
 YELLOW='\033[1;33m'
 GREEN='\033[0;32m'
@@ -22,23 +21,27 @@ if [[ ! $REPLY =~ ^[Yy]$ ]]; then
 fi
 
 case "$PROVIDER" in
-  terraform|azure)
+  opentofu|azure)
+    echo -e "${YELLOW}[•] Checking for OpenTofu${RESET}"
+    if command -v otf &>/dev/null; then
+      TF_CMD=otf
+    elif command -v terraform &>/dev/null; then
+      TF_CMD=terraform
+    else
+      echo "ERROR: OpenTofu CLI not found. Install from https://opentofu.org/" >&2
+      exit 1
+    fi
+
     echo -e "${YELLOW}[•] Tainting VM for redeployment …${RESET}"
     cd "$LAB_DIR/infrastructure/terraform"
-    terraform taint azurerm_linux_virtual_machine.target
-    echo -e "${YELLOW}[•] Reapplying Terraform …${RESET}"
-    terraform apply -auto-approve
+    "$TF_CMD" taint azurerm_linux_virtual_machine.target
+    echo -e "${YELLOW}[•] Reapplying OpenTofu …${RESET}"
+    "$TF_CMD" apply -auto-approve
     echo -e "${GREEN}[✓] VM rebuilt on Azure.${RESET}"
-    ;;
-  vagrant)
-    echo -e "${YELLOW}[•] Destroying and re-provisioning VM …${RESET}"
-    vagrant destroy -f
-    vagrant up --provision
-    echo -e "${GREEN}[✓] VM re-provisioned.${RESET}"
     ;;
   *)
     echo "ERROR: Unknown provider '$PROVIDER'" >&2
-    echo "Usage: $0 [terraform|vagrant]" >&2
+    echo "Usage: $0 [opentofu|azure]" >&2
     exit 1
     ;;
 esac

@@ -25,7 +25,7 @@ cd basic_privesc
 ./scripts/setup.sh
 ```
 
-This provisions a local VM with the vulnerable target. Then:
+This provisions an Azure VM with the vulnerable target using OpenTofu. Then:
 
 ```bash
 ssh appuser@<lab-ip>   # password: wareh0use!

@@ -27,9 +27,9 @@ Submitting any one flag proves you've successfully escalated. Finding all four w
 
 | Protocol | Host | User | Password |
 |----------|------|------|----------|
-| SSH | `192.168.49.10` (Vagrant) | `appuser` | `wareh0use!` |
+| SSH | `appuser@<public-ip>` | `appuser` | `wareh0use!` |
 
-> If you're using the Vagrant provider the VM gets a host-only IP at `192.168.49.10`.
+> The Azure VM is provisioned via OpenTofu and will expose a public IP for SSH access.
 
 ## Rules
 

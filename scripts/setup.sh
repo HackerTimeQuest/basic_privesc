@@ -1,14 +1,13 @@
 #!/usr/bin/env bash
 # setup.sh — Provision the lab environment
-# Supports two back-ends: terraform/azure (default) and vagrant.
-#   ./setup.sh                # terraform apply (Azure)
-#   ./setup.sh vagrant        # vagrant up
+# Supports one back-end: opentofu/azure (default).
+#   ./setup.sh                # opentofu apply (Azure)
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LAB_DIR="$(dirname "$SCRIPT_DIR")"
-PROVIDER="${1:-terraform}"
+PROVIDER="${1:-opentofu}"
 DEFAULT_LOCATIONS=(northeurope westeurope eastus centralus eastus2 southcentralus uksouth francecentral southeastasia japaneast australiaeast)
 VM_SIZES=(Standard_B2ats_v2 Standard_B2ts_v2 Standard_B2s Standard_D2s_v3)
 
@@ -58,10 +57,14 @@ select_location_and_size() {
   return 0
 }
 
-setup_terraform() {
-  echo -e "${YELLOW}[•] Checking for Terraform${RESET}"
-  if ! command -v terraform &>/dev/null; then
-    echo "ERROR: terraform not found.  Install from https://www.terraform.io/" >&2
+setup_opentofu() {
+  echo -e "${YELLOW}[•] Checking for OpenTofu${RESET}"
+  if command -v otf &>/dev/null; then
+    TF_CMD=otf
+  elif command -v terraform &>/dev/null; then
+    TF_CMD=terraform
+  else
+    echo "ERROR: OpenTofu CLI not found. Install from https://opentofu.org/" >&2
     exit 1
   fi
 
@@ -90,12 +93,12 @@ setup_terraform() {
     MY_IP="${MY_IP}/32"
   fi
 
-  echo -e "${YELLOW}[•] Initializing and applying Terraform…${RESET}"
+  echo -e "${YELLOW}[•] Initializing and applying OpenTofu…${RESET}"
   cd "$LAB_DIR/infrastructure/terraform"
-  terraform init
-  terraform apply -auto-approve -var="location=${SELECTED_LOCATION}" -var="vm_size=${SELECTED_SIZE}" -var="allowed_ssh_cidr=${MY_IP}"
+  "$TF_CMD" init
+  "$TF_CMD" apply -auto-approve -var="location=${SELECTED_LOCATION}" -var="vm_size=${SELECTED_SIZE}" -var="allowed_ssh_cidr=${MY_IP}"
 
-  PUBLIC_IP=$(terraform output -raw public_ip_address)
+  PUBLIC_IP=$("$TF_CMD" output -raw public_ip_address)
   echo -e "${GREEN}[✓] VM is running on Azure.${RESET}"
   echo ""
 
@@ -122,33 +125,12 @@ setup_terraform() {
   echo ""
 }
 
-setup_vagrant() {
-  echo -e "${YELLOW}[•] Checking for Vagrant${RESET}"
-  if ! command -v vagrant &>/dev/null; then
-    echo "ERROR: vagrant not found.  Install from https://www.vagrantup.com/" >&2
-    exit 1
-  fi
-
-  echo -e "${YELLOW}[•] Starting VM …${RESET}"
-  vagrant up --provision
-
-  echo -e "${GREEN}[✓] VM is running.${RESET}"
-  echo ""
-  echo "  SSH in with:"
-  echo -e "  ${CYAN}ssh appuser@192.168.49.10${RESET}   (password: wareh0use!)"
-  echo ""
-}
-
-
 banner
 case "$PROVIDER" in
-  terraform|azure) setup_terraform ;;
-  vagrant)          setup_vagrant   ;;
+  opentofu|azure) setup_opentofu ;;
   *)
     echo "ERROR: Unknown provider '$PROVIDER'" >&2
-    echo "Usage: $0 [terraform|vagrant]" >&2
-    exit 1
-    ;;
+    echo "Usage: $0 [opentofu|azure]" >&2
 esac
 
 echo -e "${GREEN}Lab is ready.  Read lab.md for the scenario.${RESET}"

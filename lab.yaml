@@ -28,3 +28,9 @@ estimated_time: 90
 cost_per_minute: 0.01
 environment:
   type: VM
+provisioning:
+  strategy: terraform
+  template_path: infrastructure/terraform
+  ttl_minutes: 90
+  vm_size: Standard_B2s
+  ports: [22]

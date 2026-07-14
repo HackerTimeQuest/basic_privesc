@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Minimal Terraform manifest — produces a single Azure VM for HackerTime.
-# Run:  cd infrastructure/terraform && terraform init && terraform apply
+# Minimal OpenTofu manifest — produces a single Azure VM for HackerTime.
+# Run:  cd infrastructure/terraform && otf init && otf apply
 # Prerequisite: Azure CLI login with `az login`
 
 terraform {
